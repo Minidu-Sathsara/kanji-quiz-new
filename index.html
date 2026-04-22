@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>漢字クイズ — 5 Papers</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  *,::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  :root{--blue:#1a3a6e; --gold:#d4921e; --green:#1a7a4a; --green-bg:#e8f7ee; --red:#c0392b; --red-bg:#fdecea; --ink:#1a1a2e; --bg:#f2ede3; --card:#fff; --border:#ddd6c8; --muted:#888; --r:16px;}
+  html,body{height:100%;overflow:hidden;font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink);}
+  #home{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:var(--bg);z-index:300;overflow-y:auto;padding-bottom:32px;}
+  .home-header{width:100%;background:var(--blue);color:white;padding:28px 20px 22px;text-align:center;}
+  .home-title{font-family:'Noto Serif JP',serif;font-size:1.5rem;font-weight:700;margin-bottom:4px;}
+  .home-sub{font-size:0.8rem;opacity:0.75;}
+  .home-body{width:100%;max-width:420px;padding:20px 16px;display:flex;flex-direction:column;gap:12px;}
+  .home-label{font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+  .paper-card{background:var(--card);border-radius:14px;border:2px solid var(--border);padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.07);transition:all 0.18s;position:relative;overflow:hidden;}
+  .paper-card:active{transform:scale(0.97);}
+  .stripe{position:absolute;left:0;top:0;bottom:0;width:5px;}
+  .paper-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:600;color:white;flex-shrink:0;}
+  .paper-info{flex:1;}
+  .paper-name{font-weight:700;font-size:0.95rem;margin-bottom:2px;}
+  .paper-desc{font-size:0.72rem;color:var(--muted);}
+  .paper-badge{font-family:'DM Mono',monospace;font-size:0.7rem;padding:3px 10px;border-radius:10px;font-weight:500;background:#f0ebe0;color:var(--muted);white-space:nowrap;}
+  .paper-badge.done{background:var(--green-bg);color:var(--green);}
+  .paper-badge.partial{background:#fff8e8;color:var(--gold);}
+  .home-reset-all{margin-top:4px;width:100%;padding:14px;background:none;border:2px solid #ddd;border-radius:12px;font-family:'Noto Sans JP',sans-serif;font-size:0.85rem;color:var(--muted);cursor:pointer;}
+  #quiz{position:fixed;inset:0;display:none;flex-direction:column;}
+  .topbar{height:60px;background:var(--accent,var(--blue));color:white;display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,0.22);}
+  .topbar-back{background:rgba(255,255,255,0.18);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:1rem;cursor:pointer;}
+  .topbar-title{font-family:'Noto Serif JP',serif;font-size:0.95rem;font-weight:700;flex:1;}
+  .score-pill{background:var(--gold);color:white;font-family:'DM Mono',monospace;font-size:0.78rem;font-weight:500;padding:4px 12px;border-radius:20px;}
+  .progress-strip{height:4px;background:rgba(0,0,0,0.15);flex-shrink:0;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,rgba(255,255,255,0.5),var(--gold));transition:width 0.4s;}
+  .part-tabs{display:flex;background:#e8e2d8;border-bottom:1px solid #d0c8b8;flex-shrink:0;}
+  .part-tab{flex:1;padding:9px 6px;text-align:center;font-size:0.7rem;font-weight:600;color:#888;border:none;background:transparent;cursor:pointer;border-bottom:3px solid transparent;}
+  .part-tab.active{color:var(--accent,var(--blue));background:var(--bg);border-bottom-color:var(--accent,var(--blue));}
+  .q-strip{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 4px;background:var(--bg);flex-shrink:0;}
+  .q-counter-text{font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);}
+  .q-dots{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end;max-width:220px;}
+  .q-dot{width:7px;height:7px;border-radius:50%;background:#d0c8b8;cursor:pointer;flex-shrink:0;}
+  .q-dot.current{background:var(--accent,var(--blue));transform:scale(1.4);}
+  .card-area{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:10px 14px;}
+  .qcard{width:100%;max-width:420px;background:var(--card);border-radius:var(--r);box-shadow:0 4px 24px rgba(0,0,0,0.12);border:2px solid var(--border);transition:transform 0.28s ease,opacity 0.28s ease;}
+  .card-band{height:5px;background:var(--accent,var(--blue));}
+  .card-top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 4px;}
+  .card-word{font-family:'Noto Serif JP',serif;font-size:2.8rem;text-align:center;padding:14px 14px 18px;}
+  .options{display:flex;flex-direction:column;gap:7px;padding:12px 14px 12px;}
+  .opt{display:flex;align-items:center;gap:12px;padding:13px 14px;border:2px solid #e0d8cc;border-radius:12px;cursor:pointer;}
+  .bottom-nav{height:84px;background:var(--card);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:10px 18px;}
+  .nav-btn{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:var(--accent,var(--blue));color:white;}
+  .summary-overlay{position:fixed;inset:0;background:rgba(10,20,50,0.82);z-index:400;display:flex;align-items:center;justify-content:center;padding:22px;opacity:0;pointer-events:none;transition:opacity 0.35s;}
+  .summary-overlay.show{opacity:1;pointer-events:all;}
+  .summary-card{background:white;border-radius:22px;padding:28px 24px;text-align:center;width:100%;max-width:360px;}
+</style>
+</head>
+<body>
+
+<div id="home">
+  <div class="home-header"><div class="home-title">漢字クイズ</div></div>
+  <div class="home-body"><div id="paper-list"></div><button class="home-reset-all" onclick="resetAllPapers()">↺ Reset all papers</button></div>
+</div>
+
+<div id="quiz">
+  <div class="topbar"><button class="topbar-back" onclick="goHome()">←</button><div class="topbar-title" id="quiz-title"></div><div class="score-pill" id="score-pill"></div></div>
+  <div class="progress-strip"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  <div class="part-tabs"><button class="part-tab active" id="tab-a" onclick="switchPart('A')">Part A</button><button class="part-tab" id="tab-b" onclick="switchPart('B')">Part B</button></div>
+  <div class="q-strip"><div class="q-counter-text" id="q-counter-text"></div><div class="q-dots" id="q-dots"></div></div>
+  <div class="card-area" id="card-area">
+    <div class="qcard" id="qcard">
+      <div class="card-band"></div>
+      <div class="card-top"><span id="card-qnum"></span><span id="card-part"></span></div>
+      <div class="card-word" id="card-word"></div>
+      <div class="options" id="options"></div>
+      <div class="feedback-row" id="feedback-row"></div>
+    </div>
+  </div>
+  <div class="bottom-nav"><button class="nav-btn" id="btn-prev" onclick="goQ(-1)">←</button><button class="nav-skip" id="btn-skip" onclick="skipQ()">Skip</button><button class="nav-btn" id="btn-next" onclick="goQ(1)">→</button></div>
+</div>
+
+<div class="summary-overlay" id="summary">
+  <div class="summary-card">
+    <div class="sum-title">Complete!</div>
+    <div class="sum-big" id="sum-score"></div>
+    <button onclick="goHome()">Back to Home</button>
+  </div>
+</div>
+
+<script>
+// Data Placeholders
+const ALL_KANJI = [["月","がつ","Month"],["近所","きんじょ","Neighborhood"]]; // Add full data here
+const PAPERS = [{id:1, name:"Paper 1", accent:"#1a3a6e", seed:99}];
+const paperData = {}, paperAnswers = {};
+
+// Initialization
+PAPERS.forEach(p => { paperAnswers[p.id] = {}; });
+
+function buildHome() {
+  const list = document.getElementById('paper-list');
+  list.innerHTML = '';
+  PAPERS.forEach(p => {
+    const ans = paperAnswers[p.id];
+    const total = Object.keys(ans).length;
+    const badgeText = `${total}/196 done`;
+    const card = document.createElement('div');
+    card.className = 'paper-card';
+    card.innerHTML = `
+      <div class="stripe" style="background:${p.accent}"></div>
+      <div class="paper-icon" style="background:${p.accent}">${p.id}</div>
+      <div class="paper-info">
+        <div class="paper-name">${p.name}</div>
+      </div>
+      <div class="paper-badge">${badgeText}</div>
+    `;
+    card.onclick = () => openPaper(p.id);
+    list.appendChild(card);
+  });
+}
+
+function openPaper(id) {
+  document.getElementById('home').style.display = 'none';
+  document.getElementById('quiz').style.display = 'flex';
+  // Add initialization logic here
+}
+
+function goHome() {
+  document.getElementById('home').style.display = 'flex';
+  document.getElementById('quiz').style.display = 'none';
+}
+
+// Swipe Logic Completion
+let tx = 0, ty = 0;
+const ca = document.getElementById('card-area');
+ca.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, {passive: true});
+ca.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tx;
+  const dy = e.changedTouches[0].clientY - ty;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+    if (dx < 0) { /* Next logic */ } else { /* Prev logic */ }
+  }
+}, {passive: true});
+
+buildHome();
+</script>
+</body>
+</html>
